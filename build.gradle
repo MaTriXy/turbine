@@ -1,10 +1,8 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinJvmCompilation
 
 plugins {
   alias(libs.plugins.kotlin)
-  alias(libs.plugins.kotlinApiDump)
   alias(libs.plugins.spotless)
   alias(libs.plugins.publish)
   alias(libs.plugins.dokka)
@@ -12,6 +10,15 @@ plugins {
 
 kotlin {
   explicitApi()
+
+  abiValidation {
+    enabled = true
+
+    // TODO work around https://youtrack.jetbrains.com/issue/KT-78525
+    tasks.named('check') {
+      dependsOn(legacyDump.legacyCheckTaskProvider)
+    }
+  }
 
   androidNativeArm32()
   androidNativeArm64()
@@ -51,16 +58,25 @@ kotlin {
   tvosSimulatorArm64()
   tvosX64()
 
-  wasmJs()
-  wasmWasi {
-    nodejs()
-  }
+  wasmJs().nodejs()
+  wasmWasi().nodejs()
 
   watchosArm32()
   watchosArm64()
   watchosDeviceArm64()
   watchosSimulatorArm64()
   watchosX64()
+
+  applyDefaultHierarchyTemplate {
+    it.group("common") {
+      it.group('nonJvm') {
+        it.group('native') {}
+        it.withJs()
+        it.withWasmJs()
+        it.withWasmWasi()
+      }
+    }
+  }
 
   sourceSets {
     commonMain {
@@ -74,9 +90,6 @@ kotlin {
         implementation 'org.jetbrains.kotlin:kotlin-test'
       }
     }
-    nonJvmTest {
-      dependsOn(commonTest)
-    }
   }
 
   sourceSets.matching { it.name.endsWith("Test") }.configureEach {
@@ -84,13 +97,6 @@ kotlin {
       optIn('kotlinx.coroutines.DelicateCoroutinesApi')
       optIn('kotlinx.coroutines.InternalCoroutinesApi')
       optIn('kotlinx.coroutines.ExperimentalCoroutinesApi')
-    }
-  }
-
-  targets.each { target ->
-    if (target.platformType == KotlinPlatformType.common) return
-    if (target.platformType != KotlinPlatformType.jvm) {
-      target.compilations.test.defaultSourceSet.dependsOn(sourceSets.nonJvmTest)
     }
   }
 }
@@ -101,16 +107,5 @@ spotless {
     ktlint('0.48.2').editorConfigOverride([
       'ktlint_standard_filename': 'disabled',
     ])
-  }
-}
-
-dokkaHtml {
-  dokkaSourceSets {
-    configureEach {
-      skipDeprecated.set(true)
-      externalDocumentationLink {
-        url.set(new URL('https://kotlin.github.io/kotlinx.coroutines/'))
-      }
-    }
   }
 }

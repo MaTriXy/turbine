@@ -22,18 +22,18 @@ repositories {
   mavenCentral()
 }
 dependencies {
-  testImplementation("app.cash.turbine:turbine:1.2.0")
+  testImplementation("app.cash.turbine:turbine:1.2.1")
 }
 ```
 
 <details>
-<summary>Snapshots of the development version are available in Sonatype's snapshots repository.</summary>
+<summary>Snapshots of the development version are available in the Central Portal Snapshots repository.</summary>
 <p>
 
 ```kotlin
 repositories {
   maven {
-    url = uri("https://oss.sonatype.org/content/repositories/snapshots/")
+    url = uri("https://central.sonatype.com/repository/maven-snapshots/")
   }
 }
 dependencies {
